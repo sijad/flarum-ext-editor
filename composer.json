@@ -1,0 +1,35 @@
+{
+    "name": "sijad/flarum-ext-editor",
+    "description": "wysiwyg editor for Flarum",
+    "type": "flarum-extension",
+    "keywords": ["preview", "text", "post", "edit", "html"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Sajjad Hashemian",
+            "email": "wolaws@gmail.com"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/sijad/flarum-ext-editor/issues",
+        "source": "https://github.com/sijad/flarum-ext-editor"
+    },
+    "require": {
+        "flarum/core": "^0.1.0-beta.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Sijad\\Editor\\": "src/"
+        }
+    },
+    "extra": {
+        "flarum-extension": {
+            "title": "Editor",
+            "icon": {
+                "name": "paragraph",
+                "backgroundColor": "#145254",
+                "color": "#fff"
+            }
+        }
+    }
+}
