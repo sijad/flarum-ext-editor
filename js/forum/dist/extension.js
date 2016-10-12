@@ -126,10 +126,167 @@ System.register('sijad/editor/components/TextEditorCKEditor', ['flarum/component
 });;
 'use strict';
 
-System.register('sijad/editor/main', ['flarum/extend', 'flarum/app', 'flarum/components/ComposerBody', 'flarum/components/Composer', 'sijad/editor/components/TextEditorCKEditor'], function (_export, _context) {
+System.register('sijad/editor/components/TextEditorTinyMCE', ['flarum/components/TextEditor', 'flarum/helpers/listItems', 'flarum/components/LoadingIndicator'], function (_export, _context) {
   "use strict";
 
-  var extend, app, ComposerBody, Composer, TextEditorCKEditor;
+  var TextEditor, listItems, LoadingIndicator, TextEditorTinyMCE;
+  return {
+    setters: [function (_flarumComponentsTextEditor) {
+      TextEditor = _flarumComponentsTextEditor.default;
+    }, function (_flarumHelpersListItems) {
+      listItems = _flarumHelpersListItems.default;
+    }, function (_flarumComponentsLoadingIndicator) {
+      LoadingIndicator = _flarumComponentsLoadingIndicator.default;
+    }],
+    execute: function () {
+      TextEditorTinyMCE = function (_TextEditor) {
+        babelHelpers.inherits(TextEditorTinyMCE, _TextEditor);
+
+        function TextEditorTinyMCE() {
+          babelHelpers.classCallCheck(this, TextEditorTinyMCE);
+          return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(TextEditorTinyMCE).apply(this, arguments));
+        }
+
+        babelHelpers.createClass(TextEditorTinyMCE, [{
+          key: 'init',
+          value: function init() {
+            var _this2 = this;
+
+            this.value = m.prop(this.props.value || '');
+
+            this.loading = false;
+            if (typeof tinymce === 'undefined') {
+              this.loading = true;
+              $.ajax({
+                url: 'https://cdn.tinymce.com/4/tinymce.min.js',
+                dataType: 'script',
+                cache: true,
+                success: function success() {
+                  _this2.loading = false;
+                  m.redraw(true);
+                }
+              });
+            }
+
+            // Unfortunately fixed_toolbar_container does not support
+            // calling with an element so we have to add an ID to container.
+            this.elID = Math.round(Math.random() * 1000000);
+          }
+        }, {
+          key: 'view',
+          value: function view() {
+            return m(
+              'div',
+              { id: 'tinymce-' + this.elID, className: 'TextEditor TextEditor-TinyMCE' },
+              this.loading ? m(
+                'p',
+                {
+                  className: 'TextEditor-placeholder'
+                },
+                LoadingIndicator.component({ size: 'large' })
+              ) : m(
+                'div',
+                null,
+                m('div', { className: 'toolbar' }),
+                m('div', {
+                  className: 'Composer-flexible-editor',
+                  config: this.configTextarea.bind(this)
+                }),
+                m(
+                  'ul',
+                  { className: 'TextEditor-controls Composer-footer' },
+                  listItems(this.controlItems().toArray())
+                )
+              )
+            );
+          }
+        }, {
+          key: 'configTextarea',
+          value: function configTextarea(element, isInitialized) {
+            if (isInitialized) return;
+
+            tinymce.init({
+              target: element,
+              init_instance_callback: this.editorInit.bind(this),
+              menubar: false,
+              elementpath: false,
+              resize: false,
+              statusbar: false,
+              inline: true,
+              fixed_toolbar_container: '#tinymce-' + this.elID + ' .toolbar'
+            });
+          }
+        }, {
+          key: 'getEditor',
+          value: function getEditor() {
+            return TextEditorTinyMCE.getEditor(this.editorID);
+          }
+        }, {
+          key: 'editorInit',
+          value: function editorInit(editor) {
+            var _this3 = this;
+
+            editor.setContent(this.value());
+            var id = editor.id;
+
+            this.$().data('tinymceid', id);
+
+            this.editorID = id;
+
+            this.$().trigger('tinymce:loaded', [id]);
+
+            m.redraw(true);
+
+            var onChange = function onChange() {
+              _this3.oninput(editor.getContent());
+            };
+
+            editor.on('KeyUp', onChange);
+            editor.on('Change', onChange);
+          }
+        }, {
+          key: 'onunload',
+          value: function onunload() {
+            var editor = this.getEditor();
+            if (editor) {
+              editor.destroy();
+            }
+            babelHelpers.get(Object.getPrototypeOf(TextEditorTinyMCE.prototype), 'onunload', this).call(this);
+          }
+        }, {
+          key: 'onsubmit',
+          value: function onsubmit() {
+            var editor = this.getEditor();
+            if (editor) {
+              this.oninput(editor.getContent());
+            }
+            babelHelpers.get(Object.getPrototypeOf(TextEditorTinyMCE.prototype), 'onsubmit', this).call(this);
+          }
+        }], [{
+          key: 'getEditor',
+          value: function getEditor(id) {
+            if (typeof tinymce !== 'undefined') {
+              var editor = tinymce.get(id);
+              if (editor) {
+                return editor;
+              }
+            }
+            return null;
+          }
+        }]);
+        return TextEditorTinyMCE;
+      }(TextEditor);
+
+      _export('default', TextEditorTinyMCE);
+    }
+  };
+});;
+'use strict';
+
+System.register('sijad/editor/main', ['flarum/extend', 'flarum/app', 'flarum/components/ComposerBody', 'flarum/components/Composer', 'sijad/editor/components/TextEditorTinyMCE'], function (_export, _context) {
+  "use strict";
+
+  var extend, app, ComposerBody, Composer, TextEditorTinyMCE;
   return {
     setters: [function (_flarumExtend) {
       /* global CKEDITOR */
@@ -142,14 +299,14 @@ System.register('sijad/editor/main', ['flarum/extend', 'flarum/app', 'flarum/com
       ComposerBody = _flarumComponentsComposerBody.default;
     }, function (_flarumComponentsComposer) {
       Composer = _flarumComponentsComposer.default;
-    }, function (_sijadEditorComponentsTextEditorCKEditor) {
-      TextEditorCKEditor = _sijadEditorComponentsTextEditorCKEditor.default;
+    }, function (_sijadEditorComponentsTextEditorTinyMCE) {
+      TextEditorTinyMCE = _sijadEditorComponentsTextEditorTinyMCE.default;
     }],
     execute: function () {
 
       app.initializers.add('sijad-editor', function () {
         extend(ComposerBody.prototype, 'init', function init() {
-          this.editor = new TextEditorCKEditor({
+          this.editor = new TextEditorTinyMCE({
             submitLabel: this.props.submitLabel,
             placeholder: this.props.placeholder,
             onchange: this.content,
@@ -159,57 +316,68 @@ System.register('sijad/editor/main', ['flarum/extend', 'flarum/app', 'flarum/com
         });
 
         extend(Composer.prototype, 'updateHeight', function updateHeight() {
-          var _this = this;
+          var $editor = this.$('.TextEditor');
+          if (!$editor.length) return;
 
-          if (!this.$('.TextEditor').length) return;
+          var editor = TextEditorTinyMCE.getEditor($editor.data('tinymceid'));
 
-          var clear = function clear() {
-            clearInterval(_this.interval);
+          var resize = function resize() {
+            // editor();
+            console.log('do resize here');
           };
 
-          var updateCKEHeight = function updateCKEHeight() {
-            var name = _this.$('.Composer-flexible-editor').data('ckeditor');
-            if (name) {
-              var _ret = function () {
-                clear();
-                var editor = CKEDITOR.instances[name];
-                if (editor) {
-                  var update = function update() {
-                    var headerHeight = $(editor.container.$).offset().top - _this.$().offset().top;
-                    var footerHeight = _this.$('.Composer-footer').outerHeight(true);
-                    var height = _this.$().outerHeight() - headerHeight - footerHeight;
-                    editor.resize('100%', height);
-                  };
-
-                  if (editor.status === 'ready') {
-                    update();
-                  } else {
-                    editor.on('instanceReady', update);
-                  }
-                  return {
-                    v: true
-                  };
-                }
-              }();
-
-              if ((typeof _ret === 'undefined' ? 'undefined' : babelHelpers.typeof(_ret)) === "object") return _ret.v;
+          if (!editor) {
+            if (!this.tinymceLoaded) {
+              this.tinymceLoaded = true;
+              $editor.on('tinymce:loaded', function (_, id) {
+                editor = TextEditorTinyMCE.getEditor(id);
+              });
             }
-            return false;
-          };
-
-          if (updateCKEHeight() !== true) {
-            (function () {
-              var count = 0;
-              clear();
-              _this.interval = setInterval(function () {
-                updateCKEHeight();
-                count += 1;
-                if (count > 25) {
-                  clear();
-                }
-              }, 500);
-            })();
+          } else {
+            resize();
           }
+
+          // editorID
+
+          // const clear = () => {
+          //   clearInterval(this.interval);
+          // };
+
+          // const updateCKEHeight = () => {
+          //   const name = this.$('.Composer-flexible-editor').data('ckeditor');
+          //   if (name) {
+          //     clear();
+          //     const editor = CKEDITOR.instances[name];
+          //     if (editor) {
+          //       const update = () => {
+          //         const headerHeight = $(editor.container.$).offset().top - this.$().offset().top;
+          //         const footerHeight = this.$('.Composer-footer').outerHeight(true);
+          //         const height = this.$().outerHeight() - headerHeight - footerHeight;
+          //         editor.resize('100%', height);
+          //       };
+
+          //       if (editor.status === 'ready') {
+          //         update();
+          //       } else {
+          //         editor.on('instanceReady', update);
+          //       }
+          //       return true;
+          //     }
+          //   }
+          //   return false;
+          // };
+
+          // if (updateCKEHeight() !== true) {
+          //   let count = 0;
+          //   clear();
+          //   this.interval = setInterval(() => {
+          //     updateCKEHeight();
+          //     count += 1;
+          //     if (count > 25) {
+          //       clear();
+          //     }
+          //   }, 500);
+          // }
         });
       });
     }
